@@ -66,7 +66,4 @@ app.post("/admin/clients", async (req, res) => {
   res.status(201).json({ clientId, clientSecret, name });
 });
 
-app.listen(env.PORT, () => {
-  console.log(`Cortex Auth running on http://localhost:${env.PORT}`);
-  console.log(`Discovery: http://localhost:${env.PORT}/.well-known/openid-configuration`);
-});
+export default app;
