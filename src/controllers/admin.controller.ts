@@ -223,11 +223,55 @@ async function createClient() {
   loadClients();
 }
 
+async function createClient() {
+  const name  = document.getElementById("f-name").value.trim();
+  const uris  = document.getElementById("f-uris").value
+                  .split("\\n").map(s=>s.trim()).filter(Boolean);
+  const scopes = document.getElementById("f-scopes").value
+                   .trim().split(/\\s+/).filter(Boolean);
+  if (!name || !uris.length) {
+    toast("Name and at least one redirect URI are required"); return;
+  }
+  const res = await fetch("/admin/api/clients", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, redirectUris: uris, scopes }),
+  });
+  const data = await res.json();
+  if (!res.ok) { toast("Error: " + JSON.stringify(data)); return; }
+
+  document.querySelector("#m-client-id span").textContent    = data.clientId;
+  document.querySelector("#m-client-secret span").textContent = data.clientSecret;
+  document.getElementById("cred-modal").classList.add("open");
+  document.getElementById("f-name").value = "";
+  document.getElementById("f-uris").value = "";
+
+  await loadClients(); 
+}
+
 async function deleteClient(clientId) {
   if (!confirm("Delete client " + clientId + "?")) return;
-  await fetch("/admin/api/clients/" + clientId, { method: "DELETE" });
+
+  const rows = document.querySelectorAll("tbody tr");
+  for (const row of rows) {
+    if (row.textContent.includes(clientId)) {
+      row.style.opacity = "0.4";
+      row.style.pointerEvents = "none";
+    }
+  }
+
+  const res = await fetch("/admin/api/clients/" + clientId, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    toast("Delete failed — please try again");
+    await loadClients(); 
+    return;
+  }
+
   toast("Client deleted");
-  loadClients();
+  await loadClients();
 }
 
 loadClients();
@@ -274,10 +318,30 @@ loadClients();
   }
 
   async adminDeleteAplication(req: Request, res: Response) {
-    await db
-      .delete(oauthClients)
-      .where(eq(oauthClients.clientId, req.params.clientId as string));
-    res.status(200).json({ ok: true });
+    try {
+      const { clientId } = req.params as { clientId: string };
+      if (!clientId) {
+        res.status(400).json({ error: "Missing clientId" });
+        return;
+      }
+      const [existing] = await db
+        .select({ id: oauthClients.id })
+        .from(oauthClients)
+        .where(eq(oauthClients.clientId, clientId))
+        .limit(1);
+
+      if (!existing) {
+        res.status(404).json({ error: "Client not found" });
+        return;
+      }
+
+      await db.delete(oauthClients).where(eq(oauthClients.clientId, clientId));
+
+      res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error("Delete client error:", err);
+      res.status(500).json({ error: "Failed to delete client" });
+    }
   }
 }
 
