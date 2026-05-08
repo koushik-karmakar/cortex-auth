@@ -9,6 +9,7 @@ function required(key: string): string {
 
 export const env = {
   PORT: Number(process.env.PORT ?? 4000),
+  NODE_ENV: process.env.NODE_ENV ?? "development",
   DATABASE_URL: required("DATABASE_URL"),
   JWT_SECRET: required("JWT_SECRET"),
   JWT_ISSUER: required("JWT_ISSUER"),
@@ -17,4 +18,7 @@ export const env = {
   GOOGLE_CLIENT_SECRET: required("GOOGLE_CLIENT_SECRET"),
   GOOGLE_CALLBACK_URL: required("GOOGLE_CALLBACK_URL"),
   SESSION_SECRET: required("SESSION_SECRET"),
+  ADMIN_EMAILS: required("ADMIN_EMAILS")
+    .split(",")
+    .map((e) => e.trim().toLowerCase()),
 };
