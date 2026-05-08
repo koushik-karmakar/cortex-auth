@@ -3,12 +3,11 @@ import pg from "pg";
 import { env } from "../env.js";
 import * as schema from "./schema.js";
 
-const pool = new pg.Pool({ connectionString: env.DATABASE_URL });
+const pool = new pg.Pool({
+  connectionString: env.DATABASE_URL,
+});
 
 export const db = drizzle(pool, { schema });
-
 export async function checkDbConnection() {
-  const client = await pool.connect();
-  await client.query("SELECT 1");
-  client.release();
+  await pool.query("SELECT 1");
 }
