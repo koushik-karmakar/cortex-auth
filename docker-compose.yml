@@ -9,7 +9,8 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: cortex_auth
     ports:
-      - "5420:5432"
+      - "127.0.0.1:5400:5432"
+      # - "5400:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
